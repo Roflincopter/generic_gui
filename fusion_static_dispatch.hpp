@@ -5,6 +5,8 @@
 
 #include <boost/any.hpp>
 
+#include <functional>
+
 template <typename T, int index>
 struct TypeAt {
 	typedef friendly_fusion::result_of::begin<T> begin;
