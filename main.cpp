@@ -68,5 +68,5 @@ int main()
 	w.add_widget(&widget);
 	w.add_widget(&widget2);
 	
-	w.show_and_run();
+	return w.show_and_run();
 }

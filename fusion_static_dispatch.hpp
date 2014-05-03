@@ -7,14 +7,6 @@
 
 #include <functional>
 
-template <typename T, int index>
-struct TypeAt {
-	typedef friendly_fusion::result_of::begin<T> begin;
-	typedef friendly_fusion::result_of::advance_c<typename begin::type, index> adv_it;
-	typedef friendly_fusion::result_of::deref<typename adv_it::type> deref;
-	typedef typename std::decay<typename deref::type>::type value_type;
-};
-
 #if defined( __GNUC__ ) && !defined( __clang__ )
 template<int index, typename T>
 std::function<boost::any(T)> make_at_c_lambda(T seq)
@@ -60,6 +52,45 @@ template <typename T>
 boost::any get_nth(T x, int index)
 {
 	return get_nth_functor<T>()(x, index);
+}
+
+template <typename T, int... Indices>
+void set_nth_impl(T& seq, int index, boost::any const& value, indices<Indices...>)
+{
+	typedef std::function<void(T&, boost::any const&)> element_type;
+	static element_type table[] =
+	{
+		[](T& seq, boost::any const& value)
+		{
+			typedef friendly_fusion::result_of::begin<T> begin;
+			typedef friendly_fusion::result_of::advance_c<typename begin::type, Indices> adv_it;
+			typedef friendly_fusion::result_of::deref<typename adv_it::type> deref;
+			typedef typename std::decay<typename deref::type>::type value_type;
+			
+			friendly_fusion::deref(friendly_fusion::advance_c<Indices>(friendly_fusion::begin(seq))) = boost::any_cast<value_type>(value);
+		}
+		...
+	};
+	
+	table[index](seq, value);
+}
+
+template<typename T>
+struct set_nth_functor
+{
+	void operator()(T& seq, int index, boost::any const& value)
+	{
+		typedef typename friendly_fusion::result_of::size<T>::type seq_size;
+		typedef typename build_indices<seq_size::value>::type indices_type;
+		
+		set_nth_impl(seq, index, value, indices_type{});
+	}
+};
+
+template <typename T>
+void set_nth(T& x, int index, boost::any const& value)
+{
+	set_nth_functor<T>()(x, index, value);
 }
 
 #if defined( __GNUC__ ) && !defined( __clang__ )

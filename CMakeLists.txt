@@ -50,7 +50,7 @@ add_executable(msc-scriptie
 	friendly_fusion.hpp
 	fusion_static_dispatch.hpp
 	meta_types.hpp
-	boost_any_to_qvariant.hpp
+	boost_any_qvariant_convert.hpp
 	gui_item_delegate.hpp gui_item_delegate.cpp
 	main_window.hpp main_window.cpp
 	${qt_sources}

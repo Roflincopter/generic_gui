@@ -23,6 +23,7 @@ struct FusionModelInterface {
 	virtual std::string field_name(size_t section) const {throw std::runtime_error("\"field_name(size_t)\" not implemented for this model");}
 	virtual std::string key(size_t section) const {throw std::runtime_error("\"key(size_t)\" not implemented for this model");}
 	virtual boost::any get_cell(size_t row, size_t column) const {throw std::runtime_error("\"get_cell(size_t, size_t)\" not implemented for this model");}
+	virtual void set_cell(size_t row, size_t column, boost::any const& value) {throw std::runtime_error("\"set_cell(size_t, size_t, boost::any const&)\" not implemented for this model");}
 };
 
 template <typename T>
@@ -56,6 +57,11 @@ struct fusion_model<std::vector<T>> : public FusionModelInterface
 	virtual boost::any get_cell(size_t row, size_t column) const override final
 	{
 		return get_nth(data[row], column);
+	}
+	
+	virtual void set_cell(size_t row, size_t column, boost::any const& value) override final
+	{
+		set_nth<row_type>(data[row], column, value);
 	}
 };
 
@@ -99,5 +105,12 @@ struct fusion_model<std::map<std::string, T>> : public FusionModelInterface
 		auto cit = data.cbegin();
 		std::advance(cit, row);
 		return get_nth(cit->second, column);
+	}
+	
+	virtual void set_cell(size_t row, size_t column, boost::any const& value) override final
+	{
+		auto it = data.begin();
+		std::advance(it, row);
+		set_nth<row_type>(it->second, column, value);
 	}
 };
