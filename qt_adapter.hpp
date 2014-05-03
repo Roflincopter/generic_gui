@@ -34,22 +34,38 @@ struct QtModelType<std::map<std::string, V>>
 
 template <typename T>
 struct widget_type {
-	typedef void type;
+//	typedef void type;
 };
 
 template <typename T>
-struct widget_type<std::unique_ptr<T>> {
+struct widget_type<std::shared_ptr<T>> {
 	typedef typename T::widget type;
 };
 
 template <typename T>
+struct widget_type<std::shared_ptr<T>&&>
+{
+	typedef typename T::widget type;
+};
+
+template <typename T>
+struct widget_type<std::shared_ptr<T>&>
+{
+	typedef typename T::widget type;
+};
+
+template <typename T, typename U>
 struct QtWidget : public T {
 	
 	GuiItemDelegate delegate;
+	std::shared_ptr<U> model;
 	
-	QtWidget(QWidget* parent = nullptr) 
+	QtWidget(std::shared_ptr<U> model, QWidget* parent = nullptr) 
 	: T(parent)
+	, delegate()
+	, model(model)
 	{
+		T::setModel(this->model.get());
 		T::setItemDelegate(&delegate);
 	}
 };
@@ -67,7 +83,7 @@ template <typename T>
 struct QtAdapter<T, QAbstractTableModel> : public QAbstractTableModel
 {
 	typedef QTableView view;
-	typedef QtWidget<view> widget;
+	typedef QtWidget<view, QtAdapter<T, QAbstractTableModel>> widget;
 	
 	T model;
 	
@@ -111,7 +127,7 @@ struct QtAdapter<T, QAbstractTableModel> : public QAbstractTableModel
 };
 
 template <typename T>
-std::unique_ptr<QtAdapter<T, typename QtModelType<typename T::data_type>::type>> make_qt_adapter(T value) {
+std::shared_ptr<QtAdapter<T, typename QtModelType<typename T::data_type>::type>> make_qt_adapter(T value) {
 	typedef QtAdapter<T, typename QtModelType<typename T::data_type>::type> type;
-	return std::unique_ptr<type>(new type(value));
+	return std::make_shared<type>(value);
 }

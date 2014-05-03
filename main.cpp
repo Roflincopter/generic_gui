@@ -1,4 +1,5 @@
 
+#include "main_window.hpp"
 #include "fusion_model.hpp"
 #include "qt_adapter.hpp"
 #include "gui_item_delegate.hpp"
@@ -7,12 +8,6 @@
 #include <boost/fusion/adapted.hpp>
 
 #include <iostream>
-
-#include <QMainWindow>
-#include <QHeaderView>
-#include <QVBoxLayout>
-#include <QApplication>
-#include <QMdiArea>
 
 struct Data {
 	std::string name;
@@ -63,35 +58,15 @@ int main()
 	mapping.add_data("nummer2", d2);
 	mapping.add_data("nummer3", d3);
 	
-	auto&& adapter2 = make_qt_adapter(mapping);
-	
-	int argc = 0;
-	QApplication qapp(argc, nullptr);
-	
-	QMainWindow w;
-	
-	widget_type<decltype(adapter)>::type widget;
-	widget.setFixedSize(640, 480);
-	widget.setModel(adapter.get());
-	//widget.show();
-	
-	widget_type<decltype(adapter)>::type widget2;
-	widget2.setFixedSize(640, 480);
-	widget2.verticalHeader()->setEnabled(true);
-	widget2.setModel(adapter2.get());
-	//widget2.show();
-	
-	QMdiArea area;
-	
-	QVBoxLayout layout;
+	auto adapter2 = make_qt_adapter(mapping);
 
-	layout.addWidget(&widget);
-	layout.addWidget(&widget2);
+	MainWindow w;
 	
-	area.setLayout(&layout);
+	widget_type<decltype(adapter)>::type widget(adapter);
+	widget_type<decltype(adapter2)>::type widget2(adapter2);
+
+	w.add_widget(&widget);
+	w.add_widget(&widget2);
 	
-	w.setCentralWidget(&area);
-	w.show();
-	
-	return qapp.exec();
+	w.show_and_run();
 }

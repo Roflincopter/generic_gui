@@ -1,7 +1,7 @@
 
 project(msc-scriptie)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11 -g3")
 
 function(MY_QT5_WRAP_UI outfiles )
         set(options)
@@ -52,6 +52,7 @@ add_executable(msc-scriptie
 	meta_types.hpp
 	boost_any_to_qvariant.hpp
 	gui_item_delegate.hpp gui_item_delegate.cpp
+	main_window.hpp main_window.cpp
 	${qt_sources}
 	main.cpp
 )
