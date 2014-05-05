@@ -31,7 +31,7 @@ std::function<QVariant(boost::any const&)> to_qvariant_lambda()
 {
 	return [](boost::any const& any)
 	{
-		return convert<T, index>(any);
+		return to_qvariant<T, index>(any);
 	};
 }
 
@@ -83,7 +83,7 @@ boost::any to_boost_any(QVariant const& x)
 
 #if defined( __GNUC__ ) && !defined( __clang__ )
 template <typename T, int index>
-std::function<boost::any(QVariant const&)> to_qvariant_lambda()
+std::function<boost::any(QVariant const&)> to_boost_any_lambda()
 {
 	return [](QVariant const& value)
 	{

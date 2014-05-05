@@ -17,7 +17,12 @@ private:
 	fusion_model(T);
 };
 
+template <bool header_h, bool header_v>
 struct FusionModelInterface {
+	
+	static constexpr bool has_header_h = header_h;
+	static constexpr bool has_header_v = header_v;
+	
 	virtual size_t row_count() const {throw std::runtime_error("\"row_count()\" not implemented for this model");}
 	virtual size_t column_count() const {throw std::runtime_error("\"column_count()\" not implemented for this model");}
 	virtual std::string field_name(size_t section) const {throw std::runtime_error("\"field_name(size_t)\" not implemented for this model");}
@@ -27,17 +32,20 @@ struct FusionModelInterface {
 };
 
 template <typename T>
-struct fusion_model<std::vector<T>> : public FusionModelInterface
+struct fusion_model<std::vector<T>> : public FusionModelInterface<true, false>
 {
 	static_assert(friendly_fusion::traits::is_sequence<T>::type::value, "T is not a boost fusion sequence");
 	
 	typedef std::vector<T> data_type;
 	typedef T row_type;
 	
-	static constexpr bool has_header_h = true;
-	static constexpr bool has_header_v = false;
-	
 	std::vector<T> data;
+	
+	fusion_model() = default;
+	
+	fusion_model(std::vector<T> data)
+	: data(data)
+	{}
 	
 	virtual size_t row_count() const override final
 	{
@@ -66,17 +74,20 @@ struct fusion_model<std::vector<T>> : public FusionModelInterface
 };
 
 template <typename T>
-struct fusion_model<std::map<std::string, T>> : public FusionModelInterface
+struct fusion_model<std::map<std::string, T>> : public FusionModelInterface<true, true>
 {
 	static_assert(boost::fusion::traits::is_sequence<T>::type::value, "T is not a boost fusion sequence");
 	
 	typedef std::map<std::string, T> data_type;
 	typedef T row_type;
 	
-	static constexpr bool has_header_h = true;
-	static constexpr bool has_header_v = true;
-	
 	std::map<std::string, T> data;
+	
+	fusion_model() = default;
+	
+	fusion_model(std::map<std::string, T> data)
+	: data(data)
+	{}
 	
 	virtual size_t row_count() const override final
 	{

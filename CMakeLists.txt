@@ -1,5 +1,5 @@
-
-project(msc-scriptie)
+cmake_minimum_required(VERSION 2.8.12.2)
+project(generic_gui)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11 -g3")
 
@@ -43,7 +43,7 @@ qt5_wrap_cpp(qt_sources
     gui_item_delegate.hpp
 )
 
-add_executable(msc-scriptie
+add_executable(generic_gui
 	fusion_model.hpp
 	index_list.hpp
 	qt_adapter.hpp
@@ -58,7 +58,7 @@ add_executable(msc-scriptie
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS} ${Qt5Gui_EXECUTABLE_COMPILE_FLAGS} ${Qt5Core_EXECUTABLE_COMPILE_FLAGS}")
-target_link_libraries(msc-scriptie ${Qt5Widgets_LIBRARIES} ${Qt5Gui_LIBRARIES} ${Qt5Core_LIBRARIES})
+target_link_libraries(generic_gui ${Qt5Widgets_LIBRARIES} ${Qt5Gui_LIBRARIES} ${Qt5Core_LIBRARIES})
 
 
 

@@ -34,23 +34,6 @@ struct QtModelType<std::map<std::string, V>>
 
 template <typename T>
 struct widget_type {
-//	typedef void type;
-};
-
-template <typename T>
-struct widget_type<std::shared_ptr<T>> {
-	typedef typename T::widget type;
-};
-
-template <typename T>
-struct widget_type<std::shared_ptr<T>&&>
-{
-	typedef typename T::widget type;
-};
-
-template <typename T>
-struct widget_type<std::shared_ptr<T>&>
-{
 	typedef typename T::widget type;
 };
 
@@ -142,7 +125,11 @@ struct QtAdapter<T, QAbstractTableModel> : public QAbstractTableModel
 };
 
 template <typename T>
-std::shared_ptr<QtAdapter<T, typename QtModelType<typename T::data_type>::type>> make_qt_adapter(T value) {
-	typedef QtAdapter<T, typename QtModelType<typename T::data_type>::type> type;
-	return std::make_shared<type>(value);
+std::shared_ptr<typename widget_type<QtAdapter<T, typename QtModelType<typename T::data_type>::type>>::type>
+make_qt_widget(T& x)
+{
+	typedef QtAdapter<T, typename QtModelType<typename T::data_type>::type> adapter_type;
+	auto adapter_ptr = std::make_shared<adapter_type>(x);
+	auto widget_ptr = std::make_shared<typename widget_type<adapter_type>::type>(adapter_ptr);
+	return widget_ptr;
 }

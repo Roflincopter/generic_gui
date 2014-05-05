@@ -12,7 +12,7 @@
 struct Data {
 	std::string name;
 	uint32_t number;
-	float ratio;
+	double ratio;
 	bool boolean;
 };
 
@@ -20,7 +20,7 @@ BOOST_FUSION_ADAPT_STRUCT(
 	Data,
 	(std::string, name)
 	(uint32_t, number)
-	(float, ratio)
+	(double, ratio)
 	(bool, boolean)
 )
 
@@ -40,9 +40,9 @@ struct DataMapping :public fusion_model<std::map<std::string, Data>> {
 
 int main()
 {
-	Data d1{"Pietje", 2, 3.333f, true};
-	Data d2{"Jantje", 3, 1.5f, false};
-	Data d3{"Sjaakje", 1, 0.1337f, false};
+	Data d1{"Pietje", 2, 3.333, true};
+	Data d2{"Jantje", 3, 1.5, false};
+	Data d3{"Sjaakje", 1, 0.1337, false};
 	
 	DataModel model;
 	
@@ -50,23 +50,19 @@ int main()
 	model.add_data(d2);
 	model.add_data(d3);
 	
-	auto adapter = make_qt_adapter(model);
-	
 	DataMapping mapping;
 	
 	mapping.add_data("nummer1", d1);
 	mapping.add_data("nummer2", d2);
 	mapping.add_data("nummer3", d3);
-	
-	auto adapter2 = make_qt_adapter(mapping);
 
 	MainWindow w;
 	
-	widget_type<decltype(adapter)>::type widget(adapter);
-	widget_type<decltype(adapter2)>::type widget2(adapter2);
-
-	w.add_widget(&widget);
-	w.add_widget(&widget2);
+	auto widget1 = make_qt_widget(model);
+	auto widget2 = make_qt_widget(mapping);
+	
+	w.add_widget(widget1.get());
+	w.add_widget(widget2.get());
 	
 	return w.show_and_run();
 }
