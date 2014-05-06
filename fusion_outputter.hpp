@@ -6,7 +6,6 @@
 #include <boost/fusion/include/map.hpp>
 #include <boost/fusion/include/vector.hpp>
 
-#include <iostream>
 #include <ostream>
 #include <vector>
 #include <string>

@@ -2,7 +2,6 @@
 #include "main_window.hpp"
 #include "fusion_model.hpp"
 #include "qt_adapter.hpp"
-#include "gui_item_delegate.hpp"
 #include "meta_types.hpp"
 #include "fusion_outputter.hpp"
 

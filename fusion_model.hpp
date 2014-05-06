@@ -9,7 +9,6 @@
 
 #include <vector>
 #include <map>
-#include <iostream>
 
 template <typename T>
 struct fusion_model {

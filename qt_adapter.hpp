@@ -8,11 +8,12 @@
 #include <QAbstractTableModel>
 #include <QTableView>
 #include <QVariant>
-#include <QMetaType>
 
 #include <memory>
 #include <string>
 #include <iostream>
+#include <vector>
+#include <map>
 
 template <typename T>
 struct QtModelType

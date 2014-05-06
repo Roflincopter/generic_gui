@@ -1,9 +1,8 @@
-#include "meta_types.hpp"
-
 #include "gui_item_delegate.hpp"
 
+#include "meta_types.hpp"
+
 #include <QMetaProperty>
-#include <iostream>
 
 GuiItemDelegate::GuiItemDelegate(QObject *parent) :
 QStyledItemDelegate(parent)
@@ -16,9 +15,7 @@ void GuiItemDelegate::setModelData(QWidget* widget, QAbstractItemModel* model, c
 	QByteArray n = widget->metaObject()->userProperty().name();
 	QVariant variant = widget->property(n);
 	
-	std::cout << std::string(widget->metaObject()->userProperty().typeName()) << std::endl;
 	if(variant.userType() == QVariant::String && variant.userType() != QMetaType::Float) {
-		std::cout << "lolwut" << std::endl;
 		model->setData(index, QVariant::fromValue(variant.toString().toStdString()), Qt::EditRole);
 	} else {
 		QStyledItemDelegate::setModelData(widget, model, index);
