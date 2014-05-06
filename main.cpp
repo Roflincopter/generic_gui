@@ -4,6 +4,7 @@
 #include "qt_adapter.hpp"
 #include "gui_item_delegate.hpp"
 #include "meta_types.hpp"
+#include "fusion_outputter.hpp"
 
 #include <boost/fusion/adapted.hpp>
 
@@ -12,7 +13,8 @@
 struct Data {
 	std::string name;
 	uint32_t number;
-	double ratio;
+	double ratio1;
+	float ratio2;
 	bool boolean;
 };
 
@@ -20,7 +22,8 @@ BOOST_FUSION_ADAPT_STRUCT(
 	Data,
 	(std::string, name)
 	(uint32_t, number)
-	(double, ratio)
+	(double, ratio1)
+	(float,ratio2)
 	(bool, boolean)
 )
 
@@ -38,23 +41,30 @@ struct DataMapping :public fusion_model<std::map<std::string, Data>> {
 	}
 };
 
+struct CustomDataModelWidget : public WidgetType<DataModel>::type
+{
+	CustomDataModelWidget(std::shared_ptr<AdapterType<DataModel>::type> adapter)
+	: WidgetType<DataModel>::type(adapter)
+	{}
+};
+
 int main()
 {
-	Data d1{"Pietje", 2, 3.333, true};
-	Data d2{"Jantje", 3, 1.5, false};
-	Data d3{"Sjaakje", 1, 0.1337, false};
+	Data d1{"Pietje", 2, 3.333, 0.333, true};
+	Data d2{"Jantje", 3, 1.5, 0.5, false};
+	Data d3{"Sjaakje", 1, 0.1337, 0.0337, false};
 	
-	DataModel model;
+	auto model = std::make_shared<DataModel>();
 	
-	model.add_data(d1);
-	model.add_data(d2);
-	model.add_data(d3);
+	model->add_data(d1);
+	model->add_data(d2);
+	model->add_data(d3);
 	
-	DataMapping mapping;
+	auto mapping = std::make_shared<DataMapping>();
 	
-	mapping.add_data("nummer1", d1);
-	mapping.add_data("nummer2", d2);
-	mapping.add_data("nummer3", d3);
+	mapping->add_data("nummer1", d1);
+	mapping->add_data("nummer2", d2);
+	mapping->add_data("nummer3", d3);
 
 	MainWindow w;
 	
@@ -64,5 +74,10 @@ int main()
 	w.add_widget(widget1.get());
 	w.add_widget(widget2.get());
 	
-	return w.show_and_run();
+	int ret = w.show_and_run();
+	
+	std::cout << "model: " << std::endl << model->data << std::endl;
+	std::cout << "mapping: " << std::endl << mapping->data << std::endl;
+	
+	return ret;
 }

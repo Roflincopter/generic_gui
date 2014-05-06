@@ -32,11 +32,6 @@ struct QtModelType<std::map<std::string, V>>
 	typedef QAbstractTableModel type;
 };
 
-template <typename T>
-struct widget_type {
-	typedef typename T::widget type;
-};
-
 template <typename T, typename U>
 struct QtWidget : public T {
 	
@@ -59,7 +54,7 @@ struct QtAdapter : public Q {
 	
 	typedef void view;
 	
-	QtAdapter(T)
+	QtAdapter(std::shared_ptr<T>)
 	{}
 };
 
@@ -69,27 +64,27 @@ struct QtAdapter<T, QAbstractTableModel> : public QAbstractTableModel
 	typedef QTableView view;
 	typedef QtWidget<view, QtAdapter<T, QAbstractTableModel>> widget;
 	
-	T model;
+	std::shared_ptr<T> model;
 	
-	QtAdapter(T model)
+	QtAdapter(std::shared_ptr<T> model)
 	: model(model)
 	{}
 	
 	virtual int rowCount(QModelIndex const&) const override
 	{
-		return model.row_count();
+		return model->row_count();
 	}
 	
 	virtual int columnCount(QModelIndex const&) const override
 	{
-		return model.column_count();
+		return model->column_count();
 	}
 	
 	bool setData(QModelIndex const& index, QVariant const& value, int role) override final
 	{
 		if(role != Qt::EditRole) return false;
 		
-		model.set_cell(index.row(), index.column(), to_boost_any<typename T::row_type>(value, index.column()));
+		model->set_cell(index.row(), index.column(), to_boost_any<typename T::row_type>(value, index.column()));
 		
 		return true;
 	}
@@ -103,7 +98,7 @@ struct QtAdapter<T, QAbstractTableModel> : public QAbstractTableModel
 	{
 		if(role != Qt::DisplayRole && role != Qt::EditRole) return QVariant();
 		
-		return to_qvariant<typename T::row_type>(model.get_cell(index.row(), index.column()), index.column());
+		return to_qvariant<typename T::row_type>(model->get_cell(index.row(), index.column()), index.column());
 	}
 	
 	virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const override
@@ -113,23 +108,32 @@ struct QtAdapter<T, QAbstractTableModel> : public QAbstractTableModel
 		}
 		
 		if(orientation == Qt::Horizontal && T::has_header_h) {
-			return QVariant(QString::fromStdString(model.field_name(section)));
+			return QVariant(QString::fromStdString(model->field_name(section)));
 		}
 		
 		if(orientation == Qt::Vertical && T::has_header_v) {
-			return QVariant(QString::fromStdString(model.key(section)));
+			return QVariant(QString::fromStdString(model->key(section)));
 		}
 		
 		return QVariant();
 	}
 };
 
-template <typename T>
-std::shared_ptr<typename widget_type<QtAdapter<T, typename QtModelType<typename T::data_type>::type>>::type>
-make_qt_widget(T& x)
+template <typename Model>
+struct AdapterType
 {
-	typedef QtAdapter<T, typename QtModelType<typename T::data_type>::type> adapter_type;
-	auto adapter_ptr = std::make_shared<adapter_type>(x);
-	auto widget_ptr = std::make_shared<typename widget_type<adapter_type>::type>(adapter_ptr);
+	typedef QtAdapter<Model, typename QtModelType<typename Model::data_type>::type> type;
+};
+
+template <typename Model>
+struct WidgetType {
+	typedef typename AdapterType<Model>::type::widget type;
+};
+
+template <typename Model>
+std::shared_ptr<typename WidgetType<Model>::type> make_qt_widget(std::shared_ptr<Model> x)
+{
+	auto adapter_ptr = std::make_shared<typename AdapterType<Model>::type>(x);
+	auto widget_ptr = std::make_shared<typename WidgetType<Model>::type>(adapter_ptr);
 	return widget_ptr;
 }

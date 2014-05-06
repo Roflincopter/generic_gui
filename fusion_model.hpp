@@ -43,10 +43,6 @@ struct fusion_model<std::vector<T>> : public FusionModelInterface<true, false>
 	
 	fusion_model() = default;
 	
-	fusion_model(std::vector<T> data)
-	: data(data)
-	{}
-	
 	virtual size_t row_count() const override final
 	{
 		return data.size();
@@ -84,10 +80,6 @@ struct fusion_model<std::map<std::string, T>> : public FusionModelInterface<true
 	std::map<std::string, T> data;
 	
 	fusion_model() = default;
-	
-	fusion_model(std::map<std::string, T> data)
-	: data(data)
-	{}
 	
 	virtual size_t row_count() const override final
 	{

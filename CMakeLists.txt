@@ -51,6 +51,7 @@ add_executable(generic_gui
 	fusion_static_dispatch.hpp
 	meta_types.hpp
 	boost_any_qvariant_convert.hpp
+	fusion_outputter.hpp
 	gui_item_delegate.hpp gui_item_delegate.cpp
 	main_window.hpp main_window.cpp
 	${qt_sources}
