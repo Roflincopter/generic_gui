@@ -16,18 +16,46 @@ private:
 	fusion_model(T);
 };
 
-template <bool header_h, bool header_v>
-struct FusionModelInterface {
+template <bool>
+struct FusionModelWithHeaderH;
+
+template <>
+struct FusionModelWithHeaderH<false>
+{
+	static constexpr bool has_header_h = false;
+};
+
+template <>
+struct FusionModelWithHeaderH<true>
+{
+	static constexpr bool has_header_h = true;
 	
-	static constexpr bool has_header_h = header_h;
-	static constexpr bool has_header_v = header_v;
+	virtual std::string field_name(size_t section) const = 0;
+};
+
+template <bool>
+struct FusionModelWithHeaderV;
+
+template <>
+struct FusionModelWithHeaderV<false>
+{
+	static constexpr bool has_header_v = false;
+};
+
+template <>
+struct FusionModelWithHeaderV<true>
+{
+	static constexpr bool has_header_v = true;
 	
-	virtual size_t row_count() const {throw std::runtime_error("\"row_count()\" not implemented for this model");}
-	virtual size_t column_count() const {throw std::runtime_error("\"column_count()\" not implemented for this model");}
-	virtual std::string field_name(size_t section) const {throw std::runtime_error("\"field_name(size_t)\" not implemented for this model");}
-	virtual std::string key(size_t section) const {throw std::runtime_error("\"key(size_t)\" not implemented for this model");}
-	virtual boost::any get_cell(size_t row, size_t column) const {throw std::runtime_error("\"get_cell(size_t, size_t)\" not implemented for this model");}
-	virtual void set_cell(size_t row, size_t column, boost::any const& value) {throw std::runtime_error("\"set_cell(size_t, size_t, boost::any const&)\" not implemented for this model");}
+	virtual std::string key(size_t section) const = 0;
+};
+
+template <bool has_header_h, bool has_header_v>
+struct FusionModelInterface : public FusionModelWithHeaderH<has_header_h>, public FusionModelWithHeaderV<has_header_v> {
+	virtual size_t row_count() const = 0;
+	virtual size_t column_count() const = 0;
+	virtual boost::any get_cell(size_t row, size_t column) const = 0;
+	virtual void set_cell(size_t row, size_t column, boost::any const& value) = 0;
 };
 
 template <typename T>

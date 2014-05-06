@@ -42,8 +42,8 @@ struct DataMapping :public fusion_model<std::map<std::string, Data>> {
 
 struct CustomDataModelWidget : public WidgetType<DataModel>::type
 {
-	CustomDataModelWidget(std::shared_ptr<AdapterType<DataModel>::type> adapter)
-	: WidgetType<DataModel>::type(adapter)
+	CustomDataModelWidget(std::shared_ptr<DataModel> model)
+	: WidgetType<DataModel>::type(model)
 	{}
 };
 
@@ -67,11 +67,13 @@ int main()
 
 	MainWindow w;
 	
-	auto widget1 = make_qt_widget(model);
-	auto widget2 = make_qt_widget(mapping);
+	auto widget1 = std::make_shared<CustomDataModelWidget>(model);
+	auto widget2 = make_qt_widget(model);
+	auto widget3 = make_qt_widget(mapping);
 	
 	w.add_widget(widget1.get());
 	w.add_widget(widget2.get());
+	w.add_widget(widget3.get());
 	
 	int ret = w.show_and_run();
 	
