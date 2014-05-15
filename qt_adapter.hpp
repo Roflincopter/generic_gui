@@ -7,6 +7,7 @@
 
 #include <QAbstractTableModel>
 #include <QTableView>
+#include <QListView>
 #include <QVariant>
 
 #include <memory>
@@ -21,10 +22,27 @@ struct QtModelType
 	typedef void type;
 };
 
+template <bool singular>
+struct QtVectorModels;
+
+template <>
+struct QtVectorModels<true>
+{
+	typedef QAbstractListModel type;
+};
+
+template <>
+struct QtVectorModels<false>
+{
+	typedef QAbstractTableModel type;
+};
+
 template <typename V>
 struct QtModelType<std::vector<V>>
 {
-	typedef QAbstractTableModel type;
+	typedef typename QtVectorModels<
+		friendly_fusion::result_of::size<V>::type::value == 1
+	>::type type;
 };
 
 template <typename V>
@@ -62,45 +80,25 @@ struct QtWidget : public T {
 	}
 };
 
-template <typename Model>
+template <typename T, typename Model>
 struct QtAdapterBase : public Model, public FusionModelObserver
 {
-	virtual void cell_changed(int row, int column) override
-	{
-		emit this->dataChanged(this->createIndex(row, column), this->createIndex(row, column));
-	}
-	
-	virtual void append_row_begin() override
-	{
-		this->beginInsertRows(QModelIndex(), this->rowCount(QModelIndex()), this->rowCount(QModelIndex()));
-	}
-	
-	virtual void append_row_end() override
-	{
-		this->endInsertRows();
-	}
-};
-
-template <typename T>
-struct QtAdapter<T, QAbstractTableModel> : public QtAdapterBase<QAbstractTableModel>
-{
-	typedef QTableView view;
-	typedef QtWidget<view, T> widget;
-	
 	std::shared_ptr<T> model;
 	
-	QtAdapter(std::shared_ptr<T> model)
+	QtAdapterBase(std::shared_ptr<T> model)
 	: model(model)
 	{}
 	
-	virtual int rowCount(QModelIndex const&) const override
-	{
-		return model->row_count();
-	}
+	//ModelInterface
 	
 	virtual int columnCount(QModelIndex const&) const override
 	{
 		return model->column_count();
+	}
+	
+	virtual int rowCount(QModelIndex const&) const override
+	{
+		return model->row_count();
 	}
 	
 	bool setData(QModelIndex const& index, QVariant const& value, int role) override final
@@ -116,7 +114,7 @@ struct QtAdapter<T, QAbstractTableModel> : public QtAdapterBase<QAbstractTableMo
 	{
 		bool constness = is_const<typename T::row_type>(index.column());
 	
-		return QAbstractTableModel::flags(index) | (constness ? Qt::NoItemFlags : Qt::ItemIsEditable);
+		return Model::flags(index) | (constness ? Qt::NoItemFlags : Qt::ItemIsEditable);
 	}
 	
 	virtual QVariant data(QModelIndex const& index, int role) const override
@@ -166,6 +164,44 @@ struct QtAdapter<T, QAbstractTableModel> : public QtAdapterBase<QAbstractTableMo
 		
 		return QVariant();
 	}
+	
+	//ObserverInterface
+	
+	virtual void cell_changed(int row, int column) override
+	{
+		emit this->dataChanged(this->createIndex(row, column), this->createIndex(row, column));
+	}
+	
+	virtual void append_row_begin() override
+	{
+		this->beginInsertRows(QModelIndex(), this->rowCount(QModelIndex()), this->rowCount(QModelIndex()));
+	}
+	
+	virtual void append_row_end() override
+	{
+		this->endInsertRows();
+	}
+};
+
+template <typename T>
+struct QtAdapter<T, QAbstractListModel> : public QtAdapterBase<T, QAbstractListModel>
+{
+	typedef QtWidget<QListView, T> widget;
+	
+	QtAdapter(std::shared_ptr<T> model)
+	: QtAdapterBase<T, QAbstractListModel>(model)
+	{}
+};
+
+template <typename T>
+struct QtAdapter<T, QAbstractTableModel> : public QtAdapterBase<T, QAbstractTableModel>
+{
+	typedef QtWidget<QTableView, T> widget;
+	
+	QtAdapter(std::shared_ptr<T> model)
+	: QtAdapterBase<T, QAbstractTableModel>(model)
+	{}
+	
 };
 
 template <typename Model>
