@@ -9,11 +9,19 @@
 
 #include <vector>
 #include <map>
+#include <memory>
+
+struct FusionModelObserver
+{
+	virtual void cell_changed(int row, int column) {}
+	
+	virtual void append_row_begin() {}
+	virtual void append_row_end() {}
+};
 
 template <typename T>
-struct fusion_model {
-private:
-	fusion_model(T);
+struct FusionModel {
+	FusionModel(T) = delete;
 };
 
 template <bool>
@@ -56,10 +64,30 @@ struct FusionModelInterface : public FusionModelWithHeaderH<has_header_h>, publi
 	virtual size_t column_count() const = 0;
 	virtual boost::any get_cell(size_t row, size_t column) const = 0;
 	virtual void set_cell(size_t row, size_t column, boost::any const& value) = 0;
+	
+	std::vector<std::weak_ptr<FusionModelObserver>> observers;
+	void add_observer(std::weak_ptr<FusionModelObserver> obs)
+	{
+		observers.push_back(obs);
+	}
+	
+	template <typename U, typename... Args>
+	void call_on_observers(U f, Args... arguments)
+	{
+		for(auto it = observers.begin(); it != observers.end(); ++it)
+		{
+			auto s = it->lock();
+			if(s) {
+				((*s).*f)(arguments...);
+			} else {
+				it = observers.erase(it);
+			}
+		}
+	}
 };
 
 template <typename T>
-struct fusion_model<std::vector<T>> : public FusionModelInterface<true, false>
+struct FusionModel<std::vector<T>> : public FusionModelInterface<true, false>
 {
 	static_assert(friendly_fusion::traits::is_sequence<T>::type::value, "T is not a boost fusion sequence");
 	
@@ -68,7 +96,7 @@ struct fusion_model<std::vector<T>> : public FusionModelInterface<true, false>
 	
 	std::vector<T> data;
 	
-	fusion_model() = default;
+	FusionModel() = default;
 	
 	virtual size_t row_count() const override final
 	{
@@ -93,11 +121,12 @@ struct fusion_model<std::vector<T>> : public FusionModelInterface<true, false>
 	virtual void set_cell(size_t row, size_t column, boost::any const& value) override final
 	{
 		set_nth<row_type>(data[row], column, value);
+		call_on_observers(&FusionModelObserver::cell_changed, row, column);
 	}
 };
 
 template <typename T>
-struct fusion_model<std::map<std::string, T>> : public FusionModelInterface<true, true>
+struct FusionModel<std::map<std::string, T>> : public FusionModelInterface<true, true>
 {
 	static_assert(boost::fusion::traits::is_sequence<T>::type::value, "T is not a boost fusion sequence");
 	
@@ -106,7 +135,7 @@ struct fusion_model<std::map<std::string, T>> : public FusionModelInterface<true
 	
 	std::map<std::string, T> data;
 	
-	fusion_model() = default;
+	FusionModel() = default;
 	
 	virtual size_t row_count() const override final
 	{

@@ -47,7 +47,6 @@ struct AdapterType;
 
 template <typename T, typename Model>
 struct QtWidget : public T {
-	
 	GuiItemDelegate delegate;
 	std::shared_ptr<typename AdapterType<Model>::type> model;
 	
@@ -56,14 +55,34 @@ struct QtWidget : public T {
 	, delegate()
 	, model(std::make_shared<typename AdapterType<Model>::type>(model))
 	{
+		model->add_observer(this->model);
 		T::setModel(this->model.get());
 		T::setItemDelegate(&delegate);
 		T::setEditTriggers(QAbstractItemView::DoubleClicked);
 	}
 };
 
+template <typename Model>
+struct QtAdapterBase : public Model, public FusionModelObserver
+{
+	virtual void cell_changed(int row, int column) override
+	{
+		emit this->dataChanged(this->createIndex(row, column), this->createIndex(row, column));
+	}
+	
+	virtual void append_row_begin() override
+	{
+		this->beginInsertRows(QModelIndex(), this->rowCount(QModelIndex()), this->rowCount(QModelIndex()));
+	}
+	
+	virtual void append_row_end() override
+	{
+		this->endInsertRows();
+	}
+};
+
 template <typename T>
-struct QtAdapter<T, QAbstractTableModel> : public QAbstractTableModel
+struct QtAdapter<T, QAbstractTableModel> : public QtAdapterBase<QAbstractTableModel>
 {
 	typedef QTableView view;
 	typedef QtWidget<view, T> widget;
@@ -95,7 +114,9 @@ struct QtAdapter<T, QAbstractTableModel> : public QAbstractTableModel
 	
 	virtual Qt::ItemFlags flags(const QModelIndex &index) const
 	{
-		return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
+		bool constness = is_const<typename T::row_type>(index.column());
+	
+		return QAbstractTableModel::flags(index) | (constness ? Qt::NoItemFlags : Qt::ItemIsEditable);
 	}
 	
 	virtual QVariant data(QModelIndex const& index, int role) const override

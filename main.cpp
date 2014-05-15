@@ -10,33 +10,35 @@
 #include <iostream>
 
 struct Data {
-	std::string name;
+	const std::string name;
 	uint32_t number;
-	double ratio1;
-	float ratio2;
+	const double ratio1;
+	double ratio2;
 	bool boolean;
 };
 
 BOOST_FUSION_ADAPT_STRUCT(
 	Data,
-	(std::string, name)
+	(const std::string, name)
 	(uint32_t, number)
-	(double, ratio1)
-	(float,ratio2)
+	(const double, ratio1)
+	(double,ratio2)
 	(bool, boolean)
 )
 
-struct DataModel : public fusion_model<std::vector<Data>> {
-	
+struct DataModel : public FusionModel<std::vector<Data>> {
 	void add_data(Data d) {
 		data.push_back(d);
 	}
+	
 };
 
-struct DataMapping :public fusion_model<std::map<std::string, Data>> {
+struct DataMapping :public FusionModel<std::map<std::string, Data>> {
 	void add_data(std::string key, Data value)
 	{
+		call_on_observers(&FusionModelObserver::append_row_begin);
 		data.emplace(key, value);
+		call_on_observers(&FusionModelObserver::append_row_end);
 	}
 };
 
