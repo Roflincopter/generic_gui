@@ -8,71 +8,87 @@
 #include <functional>
 #include <iostream>
 
-template <typename T, int... Indices>
-bool is_const_impl(int index, indices<Indices...>)
+template <typename T>
+struct IndicesOf 
 {
-	typedef std::function<bool()> element_type;
-	static element_type table[] = {
-		[] {
-			typedef friendly_fusion::result_of::begin<T> begin;
-			typedef friendly_fusion::result_of::advance_c<typename begin::type, Indices> adv_it;
-			typedef friendly_fusion::result_of::deref<typename adv_it::type> deref;
-			typedef std::remove_reference<typename deref::type> unreferenced_type;
-			
-			return std::is_const<typename unreferenced_type::type>::value;
-		}
+	typedef typename build_indices<friendly_fusion::result_of::size<T>::type::value>::type type;
+};
+
+template <typename U, template<typename T> class F, int... Indices, typename... Args>
+typename F<U>::return_type apply_functor_to_member_impl(indices<Indices...>, int index, Args... args)
+{
+	typedef std::function<typename F<U>::return_type(Args...)> f_type;
+	static f_type array[] = {
+		(std::function<typename F<U>::return_type(Args...)>) F<U>::template call<Indices>
 		...
 	};
 	
-	return table[index]();
+	return array[index](std::forward<Args...>(args)...);
 }
+
+template <template<typename T> class F, int... Indices, typename Arg1, typename... Args>
+typename F<Arg1>::return_type apply_functor_to_member_impl(indices<Indices...>, int index, Arg1& arg1, Args... args)
+{
+	typedef std::function<typename F<Arg1>::return_type(Arg1&, Args...)> f_type;
+	static f_type array[] = {
+		(std::function<typename F<Arg1>::return_type(Arg1&, Args...)>) F<Arg1>::template call<Indices>
+		...
+	};
+	
+	return array[index](arg1, std::forward<Args...>(args)...);
+}
+
+template <typename U, template<typename T> class F, typename... Args>
+typename F<U>::return_type apply_functor_to_member(int index, Args... args)
+{
+	return apply_functor_to_member_impl<U, F>(typename IndicesOf<U>::type{}, index, std::forward<Args...>(args)...);
+}
+
+template <template<typename T> class F, typename Arg1, typename... Args>
+typename F<Arg1>::return_type apply_functor_to_member(int index, Arg1& arg1, Args... args)
+{
+	return apply_functor_to_member_impl<F>(typename IndicesOf<Arg1>::type{}, index, arg1, std::forward<Args...>(args)...);
+}
+
+template <typename T>
+struct is_const_functor
+{
+	typedef bool return_type;
+	
+	template <int I>
+	static return_type call()
+	{
+		typedef friendly_fusion::result_of::begin<T> begin;
+		typedef friendly_fusion::result_of::advance_c<typename begin::type, I> adv_it;
+		typedef friendly_fusion::result_of::deref<typename adv_it::type> deref;
+		typedef std::remove_reference<typename deref::type> unreferenced_type;
+		
+		return std::is_const<typename unreferenced_type::type>::value;
+	}
+};
 
 template <typename T>
 bool is_const(int index)
 {
-	typedef typename friendly_fusion::result_of::size<T>::type seq_size;
-	typedef typename build_indices<seq_size::value>::type indices_type;
-	
-	return is_const_impl<T>(index, indices_type{});
+	return apply_functor_to_member<T, is_const_functor>(index);
 }
 
-template<int index, typename T>
-std::function<boost::any(T)> make_at_c_lambda(T seq)
-{
-	return [](T seq){
-		return boost::any(friendly_fusion::deref(friendly_fusion::advance_c<index>(friendly_fusion::begin(seq))));
-	};
-}
-
-template<typename T, int... Indices>
-boost::any get_nth_impl(T seq, int index, indices<Indices...>)
-{
-	typedef std::function<boost::any(T)> element_type;
-	static element_type table[] =
-	{
-		make_at_c_lambda<Indices>(seq)
-		...
-	};
-
-	return table[index](seq);
-}
-
-template<typename T>
+template <typename T>
 struct get_nth_functor
 {
-	boost::any operator()(T seq, int index)
-	{
-		typedef typename friendly_fusion::result_of::size<T>::type seq_size;
-		typedef typename build_indices<seq_size::value>::type indices_type;
+	typedef boost::any return_type;
 	
-		return get_nth_impl(seq, index, indices_type{});
+	template <int I>
+	static return_type call(T& seq)
+	{
+		return boost::any(friendly_fusion::deref(friendly_fusion::advance_c<I>(friendly_fusion::begin(seq))));
 	}
 };
 
 template <typename T>
 boost::any get_nth(T x, int index)
 {
-	return get_nth_functor<T>()(x, index);
+	return apply_functor_to_member<get_nth_functor>(index, x);
 }
 
 template <bool b, typename T, typename V>
@@ -89,99 +105,56 @@ typename std::enable_if<!b, void>::type assign(T& lh, V rh)
 	lh = rh;
 }
 
-template<int index, typename T>
-std::function<void(T&, boost::any const&)> make_set_nth_lambda()
+
+template <typename T>
+struct set_nth_functor
 {
-	return [](T& seq, boost::any const& value){
+	typedef void return_type;
+	
+	template <int I>
+	static return_type call(T& t, boost::any const& value)
+	{
 		typedef friendly_fusion::result_of::begin<T> begin;
-		typedef friendly_fusion::result_of::advance_c<typename begin::type, index> adv_it;
+		typedef friendly_fusion::result_of::advance_c<typename begin::type, I> adv_it;
 		typedef friendly_fusion::result_of::deref<typename adv_it::type> deref;
 		typedef typename std::decay<typename deref::type>::type value_type;
 		typedef typename std::remove_reference<typename deref::type>::type unreferenced_type;
 		
-		assign<std::is_const<unreferenced_type>::value>(friendly_fusion::deref(friendly_fusion::advance_c<index>(friendly_fusion::begin(seq))), boost::any_cast<value_type>(value));
-	};
-}
-
-template <typename T, int... Indices>
-void set_nth_impl(T& seq, int index, boost::any const& value, indices<Indices...>)
-{
-	typedef std::function<void(T&, boost::any const&)> element_type;
-	static element_type table[] =
-	{
-		make_set_nth_lambda<Indices, T>()
-		...
-	};
-	
-	table[index](seq, value);
-}
-
-template<typename T>
-struct set_nth_functor
-{
-	void operator()(T& seq, int index, boost::any const& value)
-	{
-		typedef typename friendly_fusion::result_of::size<T>::type seq_size;
-		typedef typename build_indices<seq_size::value>::type indices_type;
-		
-		set_nth_impl(seq, index, value, indices_type{});
+		assign<std::is_const<unreferenced_type>::value>(friendly_fusion::deref(friendly_fusion::advance_c<I>(friendly_fusion::begin(t))), boost::any_cast<value_type>(value));
 	}
 };
 
 template <typename T>
 void set_nth(T& x, int index, boost::any const& value)
 {
-	set_nth_functor<T>()(x, index, value);
+	apply_functor_to_member<set_nth_functor>(index, x, value);
 }
-
-template<int index, typename T>
-std::function<std::string()> make_struct_member_name_lambda()
-{
-	return []{
-		return std::string(friendly_fusion::extension::struct_member_name<T, index>::call());
-	};
-}
-template<typename T>
-struct get_nth_name_impl {
-	
-	get_nth_name_impl() = default;
-	
-	template<int... Indices>
-	std::string operator()(int index, indices<Indices...>)
-	{
-		typedef std::function<std::string()> element_type;
-		static element_type table[] = {
-			//Workaround for gcc bug: http://gcc.gnu.org/bugzilla/show_bug.cgi?id=47226
-			make_struct_member_name_lambda<Indices, T>()
-			...
-		};
-	
-		return table[index]();
-	}
-};
 
 template <typename T>
 struct get_nth_name_functor 
 {
-	std::string operator()(int index)
-	{
-		typedef typename friendly_fusion::result_of::size<T>::type seq_size;
-		typedef typename build_indices<seq_size::value>::type indices_type;
+	typedef std::string return_type;
 	
-		return get_nth_name_impl<T>()(index, indices_type{});
+	template <int I>
+	static return_type call()
+	{
+		return std::string(friendly_fusion::extension::struct_member_name<T, I>::call());
 	}
 };
 
 template <typename T, typename U>
 struct get_nth_name_functor<boost::fusion::joint_view<T,U>>
 {
-	std::string operator()(int index)
+	typedef std::string return_type;
+	
+	template <int I>
+	static return_type call()
 	{
 		constexpr size_t size_of_T = friendly_fusion::result_of::size<T>::type::value;
-		if(index < size_of_T){
-			return get_nth_name_functor<T>()(index);
+		if(I < size_of_T){
+			return apply_functor_to_member<T, get_nth_name_functor>(I);
 		} else {
-			return get_nth_name_functor<U>()(index - size_of_T);
+			return apply_functor_to_member<U, get_nth_name_functor>(I);
 		}
 	}
 };
@@ -189,5 +162,5 @@ struct get_nth_name_functor<boost::fusion::joint_view<T,U>>
 template <typename T>
 std::string get_nth_name(int index)
 {
-	return get_nth_name_functor<T>()(index);
+	return apply_functor_to_member<T, get_nth_name_functor>(index);
 }
