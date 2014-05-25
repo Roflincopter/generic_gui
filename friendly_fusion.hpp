@@ -126,4 +126,40 @@ struct struct_member_name : private traits::is_sequence<T, false>, public boost:
 
 }
 
+namespace utils {
+
+template<typename T, int I>
+class DecayedTypeOfAtIndex {
+	typedef friendly_fusion::result_of::begin<T> begin;
+	typedef friendly_fusion::result_of::advance_c<typename begin::type, I> adv_it;
+	typedef friendly_fusion::result_of::deref<typename adv_it::type> deref;
+	typedef std::decay<typename deref::type> decayed;
+
+public:
+	typedef typename decayed::type type;
+};
+
+template<typename T, int I>
+class RefTypeOfAtIndex {
+	typedef friendly_fusion::result_of::begin<T> begin;
+	typedef friendly_fusion::result_of::advance_c<typename begin::type, I> adv_it;
+	typedef friendly_fusion::result_of::deref<typename adv_it::type> deref;
+
+public:
+	typedef typename deref::type type;
+};
+
+template<typename T, int I>
+class UnrefTypeOfAtIndex {
+	typedef friendly_fusion::result_of::begin<T> begin;
+	typedef friendly_fusion::result_of::advance_c<typename begin::type, I> adv_it;
+	typedef friendly_fusion::result_of::deref<typename adv_it::type> deref;
+	typedef std::remove_reference<typename deref::type> unrefed;
+
+public:
+	typedef typename unrefed::type type;
+};
+
+}
+
 }

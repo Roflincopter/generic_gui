@@ -19,7 +19,7 @@ typename F<U>::return_type apply_functor_to_member_impl(indices<Indices...>, int
 {
 	typedef std::function<typename F<U>::return_type(Args...)> f_type;
 	static f_type array[] = {
-		(std::function<typename F<U>::return_type(Args...)>) F<U>::template call<Indices>
+		F<U>::template call<Indices>
 		...
 	};
 	
@@ -31,7 +31,7 @@ typename F<Arg1>::return_type apply_functor_to_member_impl(indices<Indices...>, 
 {
 	typedef std::function<typename F<Arg1>::return_type(Arg1&, Args...)> f_type;
 	static f_type array[] = {
-		(std::function<typename F<Arg1>::return_type(Arg1&, Args...)>) F<Arg1>::template call<Indices>
+		F<Arg1>::template call<Indices>
 		...
 	};
 	
@@ -58,12 +58,9 @@ struct is_const_functor
 	template <int I>
 	static return_type call()
 	{
-		typedef friendly_fusion::result_of::begin<T> begin;
-		typedef friendly_fusion::result_of::advance_c<typename begin::type, I> adv_it;
-		typedef friendly_fusion::result_of::deref<typename adv_it::type> deref;
-		typedef std::remove_reference<typename deref::type> unreferenced_type;
+		typedef typename friendly_fusion::utils::UnrefTypeOfAtIndex<T, I>::type unref_type;
 		
-		return std::is_const<typename unreferenced_type::type>::value;
+		return std::is_const<unref_type>::value;
 	}
 };
 
@@ -105,7 +102,6 @@ typename std::enable_if<!b, void>::type assign(T& lh, V rh)
 	lh = rh;
 }
 
-
 template <typename T>
 struct set_nth_functor
 {
@@ -114,13 +110,10 @@ struct set_nth_functor
 	template <int I>
 	static return_type call(T& t, boost::any const& value)
 	{
-		typedef friendly_fusion::result_of::begin<T> begin;
-		typedef friendly_fusion::result_of::advance_c<typename begin::type, I> adv_it;
-		typedef friendly_fusion::result_of::deref<typename adv_it::type> deref;
-		typedef typename std::decay<typename deref::type>::type value_type;
-		typedef typename std::remove_reference<typename deref::type>::type unreferenced_type;
+		typedef typename friendly_fusion::utils::DecayedTypeOfAtIndex<T, I>::type value_type;
+		typedef typename friendly_fusion::utils::UnrefTypeOfAtIndex<T, I>::type unref_type;
 		
-		assign<std::is_const<unreferenced_type>::value>(friendly_fusion::deref(friendly_fusion::advance_c<I>(friendly_fusion::begin(t))), boost::any_cast<value_type>(value));
+		assign<std::is_const<unref_type>::value>(friendly_fusion::deref(friendly_fusion::advance_c<I>(friendly_fusion::begin(t))), boost::any_cast<value_type>(value));
 	}
 };
 
@@ -154,7 +147,7 @@ struct get_nth_name_functor<boost::fusion::joint_view<T,U>>
 		if(I < size_of_T){
 			return apply_functor_to_member<T, get_nth_name_functor>(I);
 		} else {
-			return apply_functor_to_member<U, get_nth_name_functor>(I);
+			return apply_functor_to_member<U, get_nth_name_functor>(I - size_of_T);
 		}
 	}
 };

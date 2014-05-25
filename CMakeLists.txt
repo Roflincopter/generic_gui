@@ -41,6 +41,7 @@ include_directories(SYSTEM ${Qt5Core_INCLUDE_DIRS})
 
 qt5_wrap_cpp(qt_sources
     gui_item_delegate.hpp
+    form.hpp
 )
 
 add_executable(generic_gui
@@ -52,6 +53,7 @@ add_executable(generic_gui
 	meta_types.hpp
 	boost_any_qvariant_convert.hpp
 	fusion_outputter.hpp
+	form.hpp
 	gui_item_delegate.hpp gui_item_delegate.cpp
 	main_window.hpp main_window.cpp
 	${qt_sources}

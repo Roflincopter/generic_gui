@@ -4,6 +4,7 @@
 #include "qt_adapter.hpp"
 #include "meta_types.hpp"
 #include "fusion_outputter.hpp"
+#include "form.hpp"
 
 #include <boost/fusion/adapted.hpp>
 
@@ -73,6 +74,9 @@ int main()
 	auto widget2 = make_qt_widget(model);
 	auto widget3 = make_qt_widget(mapping);
 	
+	Form<DataModel> form(model);
+	
+	w.add_widget(form.get_widget());
 	w.add_widget(widget1.get());
 	w.add_widget(widget2.get());
 	w.add_widget(widget3.get());

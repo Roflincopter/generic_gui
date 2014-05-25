@@ -47,3 +47,8 @@ QString GuiItemDelegate::displayText(const QVariant &value, const QLocale &local
 	}
 	return ret;
 }
+
+QString GuiItemDelegate::displayText(const QVariant &value)
+{
+	return displayText(value, QLocale());
+}
