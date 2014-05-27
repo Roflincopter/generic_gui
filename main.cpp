@@ -12,6 +12,7 @@
 
 struct Data {
 	const std::string name;
+	std::string gender;
 	uint32_t number;
 	const double ratio1;
 	double ratio2;
@@ -21,6 +22,7 @@ struct Data {
 BOOST_FUSION_ADAPT_STRUCT(
 	Data,
 	(const std::string, name)
+	(std::string, gender)
 	(uint32_t, number)
 	(const double, ratio1)
 	(double,ratio2)
@@ -28,13 +30,26 @@ BOOST_FUSION_ADAPT_STRUCT(
 )
 
 struct DataModel : public FusionModel<std::vector<Data>> {
-	void add_data(Data d) {
-		data.push_back(d);
-	}
 	
+	std::vector<Data> model;
+	
+	DataModel()
+	: FusionModel(model)
+	{}
+	
+	void add_data(Data d) {
+		model.push_back(d);
+	}
 };
 
-struct DataMapping :public FusionModel<std::map<std::string, Data>> {
+struct DataMapping : public FusionModel<std::map<std::string, Data>> {
+	
+	std::map<std::string, Data> model;
+	
+	DataMapping()
+	: FusionModel(model)
+	{}
+	
 	void add_data(std::string key, Data value)
 	{
 		call_on_observers(&FusionModelObserver::append_row_begin);
@@ -52,9 +67,9 @@ struct CustomDataModelWidget : public WidgetType<DataModel>::type
 
 int main()
 {
-	Data d1{"Pietje", 2, 3.333, 0.333, true};
-	Data d2{"Jantje", 3, 1.5, 0.5, false};
-	Data d3{"Sjaakje", 1, 0.1337, 0.0337, false};
+	Data d1{"Jan", "Male", 1, 3.333, 0.333, true};
+	Data d2{"Piet", "Male",2, 1.5, 0.5, false};
+	Data d3{"Klaas", "Confused", 3, 0.1337, 0.0337, false};
 	
 	auto model = std::make_shared<DataModel>();
 	
@@ -74,9 +89,9 @@ int main()
 	auto widget2 = make_qt_widget(model);
 	auto widget3 = make_qt_widget(mapping);
 	
-	Form<DataModel> form(model);
+	auto form = make_form(model);
 	
-	w.add_widget(form.get_widget());
+	w.add_widget(form->get_widget());
 	w.add_widget(widget1.get());
 	w.add_widget(widget2.get());
 	w.add_widget(widget3.get());

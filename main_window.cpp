@@ -7,6 +7,7 @@ MainWindow::MainWindow()
 , area(new QMdiArea())
 , layout(new QVBoxLayout())
 {
+	layout->setAlignment(Qt::AlignTop);
 	area->setLayout(layout);
 	
 	w.setCentralWidget(area);

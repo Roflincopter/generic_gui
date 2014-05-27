@@ -94,9 +94,11 @@ struct FusionModel<std::vector<T>> : public FusionModelInterface<true, false>
 	typedef std::vector<T> data_type;
 	typedef T row_type;
 	
-	std::vector<T> data;
+	std::vector<T>& data;
 	
-	FusionModel() = default;
+	FusionModel(std::vector<T>& data)
+	: data(data)
+	{}
 	
 	virtual size_t row_count() const override final
 	{
@@ -133,9 +135,11 @@ struct FusionModel<std::map<std::string, T>> : public FusionModelInterface<true,
 	typedef std::map<std::string, T> data_type;
 	typedef T row_type;
 	
-	std::map<std::string, T> data;
+	std::map<std::string, T>& data;
 	
-	FusionModel() = default;
+	FusionModel(std::map<std::string, T>& data)
+	: data(data)
+	{}
 	
 	virtual size_t row_count() const override final
 	{

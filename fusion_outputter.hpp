@@ -39,8 +39,6 @@ struct Outputter
 	{
 		return os;
 	}
-
-
 };
 
 template <typename T, typename U>
@@ -48,7 +46,7 @@ std::ostream& operator<<(std::ostream& os, std::map<T, U> map)
 {
 	os << "{" << std::endl;
 	for (auto&& x : map) {
-		os << "\t{" << x.first << ", " << x.second << "}" << std::endl;
+		os << "\t{" << x.first << ", " << "{" << x.second << "}}" << std::endl;
 	}
 	os << "}" << std::endl;
 	return os;
