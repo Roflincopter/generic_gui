@@ -85,16 +85,15 @@ int main()
 
 	MainWindow w;
 	
-	auto widget1 = std::make_shared<CustomDataModelWidget>(model);
-	auto widget2 = make_qt_widget(model);
-	auto widget3 = make_qt_widget(mapping);
+	auto widget1 = make_qt_widget<CustomDataModelWidget>(model);
+	auto widget2 = make_qt_widget<Gui::Table>(model);
+	auto widget3 = make_qt_widget<Gui::Table>(mapping);
+	auto widget4 = make_qt_widget<Gui::Form>(model);
 	
-	auto form = make_form(model);
-	
-	w.add_widget(form->get_widget());
 	w.add_widget(widget1.get());
 	w.add_widget(widget2.get());
 	w.add_widget(widget3.get());
+	w.add_widget(widget4.get());;
 	
 	int ret = w.show_and_run();
 	

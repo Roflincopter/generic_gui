@@ -4,6 +4,7 @@
 #include "boost_any_qvariant_convert.hpp"
 #include "meta_types.hpp"
 #include "gui_item_delegate.hpp"
+#include "form.hpp"
 
 #include <QAbstractTableModel>
 #include <QTableView>
@@ -15,6 +16,12 @@
 #include <iostream>
 #include <vector>
 #include <map>
+
+namespace Gui
+{
+	struct Table{};
+	struct Form{};
+}
 
 template <typename T>
 struct QtModelType
@@ -215,9 +222,33 @@ struct WidgetType {
 	typedef typename AdapterType<Model>::type::widget type;
 };
 
-template <typename Model>
-std::shared_ptr<typename WidgetType<Model>::type> make_qt_widget(std::shared_ptr<Model> x)
+//Generate a default Table-based widget.
+template <typename GuiType, typename Model, typename... Args>
+typename std::enable_if<std::is_same<Gui::Table, GuiType>::value, std::shared_ptr<typename WidgetType<Model>::type>>::type
+make_qt_widget(std::shared_ptr<Model> model, Args... args)
 {
-	auto widget_ptr = std::make_shared<typename WidgetType<Model>::type>(x);
+	auto widget_ptr = std::make_shared<typename WidgetType<Model>::type>(model, args...);
 	return widget_ptr;
 }
+
+//Generate a default Form based widget.
+template <typename GuiType, typename Model, typename... Args>
+typename std::enable_if<std::is_same<Gui::Form, GuiType>::value, std::shared_ptr<Form<Model>>>::type
+make_qt_widget(std::shared_ptr<Model> model, Args... args)
+{
+	auto widget_ptr = std::make_shared<Form<Model>>(model, args...);
+	return widget_ptr;
+}
+
+//Generate a custom widget thats is neither a default Form or Table, for total specialisation of the function.
+template <typename GuiType, typename Model, typename... Args>
+typename std::enable_if<
+	!std::is_same<Gui::Form, GuiType>::value &&
+	!std::is_same<Gui::Table, GuiType>::value, std::shared_ptr<GuiType>
+>::type
+make_qt_widget(std::shared_ptr<Model> model, Args... args)
+{
+	auto widget_ptr = std::make_shared<GuiType>(model, args...);
+	return widget_ptr;
+}
+

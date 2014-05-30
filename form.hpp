@@ -144,7 +144,7 @@ private slots:
 
 //This base is required because an QObject may not be templated and Form is a class template.
 //Slots can be virtual however.
-class QtFormBase : public QObject
+class QtFormBase : public QMdiArea
 {
 
 	Q_OBJECT
@@ -159,12 +159,12 @@ template <typename T>
 struct Form : public QtFormBase, public FusionModelObserver {
 	
 	std::shared_ptr<T> model;
-	QMdiArea* area;
 	QVBoxLayout* layout;
 	QFormLayout* form_layout;
 	QHBoxLayout* button_layout;
 	QPushButton* prev;
 	QLineEdit* jump_edit;
+	QLabel* label;
 	QPushButton* next;
 	std::vector<std::shared_ptr<FormUpdateHandler>> updatehandlers;
 	std::map<int, QLineEdit*> line_edits;
@@ -173,12 +173,12 @@ struct Form : public QtFormBase, public FusionModelObserver {
 	
 	Form(std::shared_ptr<T> model)
 	: model(model)
-	, area(new QMdiArea())
 	, layout(new QVBoxLayout())
 	, form_layout(new QFormLayout())
 	, button_layout(new QHBoxLayout())
 	, prev(new QPushButton("&Previous"))
 	, jump_edit(new QLineEdit())
+	, label(new QLabel())
 	, next(new QPushButton("&Next"))
 	, updatehandlers()
 	, line_edits()
@@ -196,17 +196,19 @@ struct Form : public QtFormBase, public FusionModelObserver {
 		layout->addLayout(form_layout);
 		layout->addLayout(button_layout);
 		
+		label->setText("/" + QString::number(model->row_count()));
+		label->setMaximumWidth(100);
+		
 		button_layout->addWidget(prev);
 		button_layout->addWidget(jump_edit);
+		button_layout->addWidget(label);
 		button_layout->addWidget(next);
 		button_layout->setAlignment(Qt::AlignHCenter);
 		
-		area->setLayout(layout);
+		setLayout(layout);
 		
 		setup_gui();
 		fill_data();
-		
-		area->updateGeometry();
 		
 		set_button_state();
 		connect(
@@ -310,17 +312,4 @@ struct Form : public QtFormBase, public FusionModelObserver {
 		int i = clamp_index(current_index + 1);
 		set_current_index(i);
 	}
-	
-	QWidget* get_widget()
-	{
-		return area;
-	}
 };
-
-template <typename Model>
-std::shared_ptr<Form<Model>> make_form(std::shared_ptr<Model> model)
-{
-	auto ret = std::make_shared<Form<Model>>(model);
-	model->add_observer(ret);
-	return ret;
-}
