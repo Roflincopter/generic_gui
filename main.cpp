@@ -38,7 +38,9 @@ struct DataModel : public FusionModel<std::vector<Data>> {
 	{}
 	
 	void add_data(Data d) {
+		call_on_observers(&FusionModelObserver::append_row_begin);
 		model.push_back(d);
+		call_on_observers(&FusionModelObserver::append_row_end);
 	}
 };
 
@@ -79,9 +81,9 @@ int main()
 	
 	auto mapping = std::make_shared<DataMapping>();
 	
-	mapping->add_data("nummer1", d1);
-	mapping->add_data("nummer2", d2);
-	mapping->add_data("nummer3", d3);
+	mapping->add_data("number1", d1);
+	mapping->add_data("number2", d2);
+	mapping->add_data("number3", d3);
 
 	MainWindow w;
 	
@@ -93,7 +95,7 @@ int main()
 	w.add_widget(widget1.get());
 	w.add_widget(widget2.get());
 	w.add_widget(widget3.get());
-	w.add_widget(widget4.get());;
+	w.add_widget(widget4.get());
 	
 	int ret = w.show_and_run();
 	
